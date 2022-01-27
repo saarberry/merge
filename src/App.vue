@@ -42,9 +42,25 @@ import { ref } from '@vue/reactivity';
 import { onMounted } from '@vue/runtime-core';
 
 const canvas = ref<HTMLCanvasElement | null>(null);
-const incrementalX = ref<number>(160);
-const incrementalY = ref<number>(140);
+const getContext = (): CanvasRenderingContext2D | null => {
+    return canvas.value?.getContext("2d") ?? null;
+}
+const setCompositeOperation = (operation: string) => {
+    const context = getContext();
+    if (context) {
+        context.globalCompositeOperation = operation;
+        renderFuckingEverything();
+    }
+}
+const clearCanvas = () => {
+    const context = getContext();
+    if (context) {
+        context.clearRect(0, 0, canvas.value?.width || 0, canvas.value?.height || 0);
+    }
+}
 
+const incrementalX = ref<number>(120);
+const incrementalY = ref<number>(160);
 const moreX = () => {
     incrementalX.value += 20;
     renderFuckingEverything();
@@ -62,52 +78,38 @@ const lessY = () => {
     renderFuckingEverything();
 }
 
-const setCompositeOperation = (operation: string) => {
-    const context = canvas.value?.getContext('2d');
-    if (context) {
-        context.globalCompositeOperation = operation;
-        renderFuckingEverything();
-    }
-}
-
-const drawHexagons = (context: CanvasRenderingContext2D, xStart: number, yStart: number, colors: string[]) => {
+const drawHexagons = (xStart: number, yStart: number, colors: string[]) => {
     const size = 50;
+    let x: number = xStart;
+    let y: number = yStart;
 
-    context.beginPath();
-    let x = xStart;
-    let y = yStart;
-
-    for (var side = 0; side <= 6; side += 1) {
+    for (let side = 0; side <= 6; side += 1) {
         x = x + size * Math.cos(side * 2 * Math.PI / 6);
         y = y + size * Math.sin(side * 2 * Math.PI / 6);
-        drawHexagon(context, x, y, colors[side]);
+        drawHexagon(x, y, colors[side % colors.length]);
     }
 }
 
-const drawHexagon = (context: CanvasRenderingContext2D, x: number, y: number, color: string) => {
+const drawHexagon = (x: number, y: number, color: string) => {
     const size = 50;
+    const context = getContext();
 
-    context.beginPath();
-    context.moveTo(x + size * Math.cos(0), y + size * Math.sin(0));
-
-    for (var side = 1; side <= 6; side += 1) {
-        context.lineTo(x + size * Math.cos(side * 2 * Math.PI / 6), y + size * Math.sin(side * 2 * Math.PI / 6));
-    }
-
-    context.fillStyle = color;
-    context.fill();
-}
-
-const clear = () => {
-    const context = canvas.value?.getContext('2d');
     if (context) {
-        context.clearRect(0, 0, canvas.value.width, canvas.value.height);
+        context.beginPath();
+        context.moveTo(x + size * Math.cos(0), y + size * Math.sin(0));
+
+        for (let side = 1; side <= 6; side += 1) {
+            context.lineTo(x + size * Math.cos(side * 2 * Math.PI / 6), y + size * Math.sin(side * 2 * Math.PI / 6));
+        }
+
+        context.fillStyle = color;
+        context.fill();
     }
 }
 
 const renderFuckingEverything = () => {
-    clear();
-    const context = canvas.value?.getContext('2d');
+    clearCanvas();
+    const context = getContext();
     if (context) {
         context.globalAlpha = .75;
 
@@ -115,9 +117,6 @@ const renderFuckingEverything = () => {
             "#FF0000",
             "#00FF00",
             "#0000FF",
-            "#FFFF00",
-            "#00FFFF",
-            "#FF00FF",
         ];
 
         const initialX = -100;
@@ -127,7 +126,7 @@ const renderFuckingEverything = () => {
 
         while (y < window.innerHeight - initialY) {
             while (x < window.innerWidth - initialX) {
-                drawHexagons(context, x, y, colors);
+                drawHexagons(x, y, colors);
                 colors.push(colors[0]);
                 colors.shift();
                 x += incrementalX.value;
@@ -143,9 +142,9 @@ onMounted(() => {
         canvas.value.width = window.innerWidth;
         canvas.value.height = window.innerHeight;
 
-        const context = canvas.value.getContext('2d');
+        const context = getContext();
         if (context) {
-            context.globalCompositeOperation = "source-over";
+            context.globalCompositeOperation = "lighter";
         }
     }
 
