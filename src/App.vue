@@ -39,6 +39,10 @@
 import { ref } from '@vue/reactivity';
 import { onMounted } from '@vue/runtime-core';
 
+const startX = -100;
+const startY = -100;
+const endX = -100; // Relative to right hand side of canvas.
+const endY = -100; // Relative to bottom of canvas.
 const incrementalX = 120;
 const incrementalY = 160;
 const clusterSize = 50;
@@ -55,6 +59,12 @@ const setCompositeOperation = (operation: string) => {
     const context = getContext();
     if (context) {
         context.globalCompositeOperation = operation;
+    }
+}
+const setAlpha = (transparency: number) => {
+    const context = getContext();
+    if (context) {
+        context.globalAlpha = transparency;
     }
 }
 const clearCanvas = () => {
@@ -124,23 +134,17 @@ const drawShape = (x: number, y: number) => {
 
 const render = () => {
     clearCanvas();
-    const context = getContext();
-    if (context) {
-        context.globalAlpha = .75;
 
-        const initialX = -100;
-        const initialY = -100;
-        let x = initialX;
-        let y = initialY;
+    let x = startX;
+    let y = startY;
 
-        while (y < window.innerHeight - initialY) {
-            while (x < window.innerWidth - initialX) {
-                drawShapeCluster(x, y);
-                x += incrementalX;
-            }
-            y += incrementalY;
-            x = initialX;
+    while (y < window.innerHeight - endY) {
+        while (x < window.innerWidth - endX) {
+            drawShapeCluster(x, y);
+            x += incrementalX;
         }
+        y += incrementalY;
+        x = startX;
     }
 }
 
@@ -150,6 +154,7 @@ onMounted(() => {
         canvas.value.height = window.innerHeight;
 
         setCompositeOperation("lighter");
+        setAlpha(.75);
         render();
     }
 });
